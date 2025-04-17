@@ -110,19 +110,14 @@
   </div>
 
   <script>
-    const peer = new Peer({
-      host: 'peerjs.com',
-      port: 443,
-      path: '/',
-      secure: true
-    });
+    const peer = new Peer();
 
     let conn = null;
     let currentPlayer = 'X';
     let isMyTurn = false;
 
     peer.on('open', (id) => {
-      document.getElementById('my-id').textContent = id;
+      document.getElementById('my-id').textContent = id; // Display the ID when the peer is ready
     });
 
     document.getElementById('connect').onclick = () => {
