@@ -111,39 +111,50 @@
 
   <script>
     const peer = new Peer();
-
     let conn = null;
-    let currentPlayer = 'X';
+    let mySymbol = null;
     let isMyTurn = false;
 
     peer.on('open', (id) => {
-      document.getElementById('my-id').textContent = id; // Display the ID when the peer is ready
+      document.getElementById('my-id').textContent = id;
     });
 
     document.getElementById('connect').onclick = () => {
       const otherID = document.getElementById('peer-id').value.trim();
       if (otherID) {
         conn = peer.connect(otherID);
+        mySymbol = 'O'; // যারা পরে কানেক্ট করবে তারা হবে O
         setupConnection(false);
       }
     };
 
     peer.on('connection', (incoming) => {
       conn = incoming;
+      mySymbol = 'X'; // হোস্ট হবে X
       setupConnection(true);
     });
 
     function setupConnection(iAmHost) {
       conn.on('open', () => {
-        document.getElementById('status').textContent = "Connected!";
+        document.getElementById('status').textContent = "Connected! You are " + mySymbol;
         isMyTurn = iAmHost;
+
+        // প্রথমে হোস্ট শুধু ক্লায়েন্টকে তার symbol জানিয়ে দেয়
+        if (iAmHost) {
+          conn.send({ type: 'init', symbol: 'O' }); // হোস্ট ক্লায়েন্টকে O বানায়
+        }
       });
 
       conn.on('data', (data) => {
-        const cell = document.querySelector(`.cell[data-index="${data.index}"]`);
-        if (!cell.textContent) {
-          cell.textContent = data.symbol;
-          isMyTurn = true;
+        if (data.type === 'init') {
+          mySymbol = data.symbol;
+          document.getElementById('status').textContent = "Connected! You are " + mySymbol;
+        } else if (data.type === 'move') {
+          const cell = document.querySelector(`.cell[data-index="${data.index}"]`);
+          if (!cell.textContent) {
+            cell.textContent = data.symbol;
+            isMyTurn = true;
+          }
         }
       });
     }
@@ -152,8 +163,8 @@
       cell.onclick = () => {
         const index = cell.dataset.index;
         if (!cell.textContent && isMyTurn && conn?.open) {
-          cell.textContent = currentPlayer;
-          conn.send({ index, symbol: currentPlayer });
+          cell.textContent = mySymbol;
+          conn.send({ type: 'move', index, symbol: mySymbol });
           isMyTurn = false;
         }
       };
