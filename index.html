@@ -123,14 +123,14 @@
       const otherID = document.getElementById('peer-id').value.trim();
       if (otherID) {
         conn = peer.connect(otherID);
-        mySymbol = 'O'; // যারা পরে কানেক্ট করবে তারা হবে O
+        mySymbol = 'O';
         setupConnection(false);
       }
     };
 
     peer.on('connection', (incoming) => {
       conn = incoming;
-      mySymbol = 'X'; // হোস্ট হবে X
+      mySymbol = 'X';
       setupConnection(true);
     });
 
@@ -139,9 +139,8 @@
         document.getElementById('status').textContent = "Connected! You are " + mySymbol;
         isMyTurn = iAmHost;
 
-        // প্রথমে হোস্ট শুধু ক্লায়েন্টকে তার symbol জানিয়ে দেয়
         if (iAmHost) {
-          conn.send({ type: 'init', symbol: 'O' }); // হোস্ট ক্লায়েন্টকে O বানায়
+          conn.send({ type: 'init', symbol: 'O' });
         }
       });
 
@@ -154,6 +153,7 @@
           if (!cell.textContent) {
             cell.textContent = data.symbol;
             isMyTurn = true;
+            checkWinner();
           }
         }
       });
@@ -166,9 +166,47 @@
           cell.textContent = mySymbol;
           conn.send({ type: 'move', index, symbol: mySymbol });
           isMyTurn = false;
+          checkWinner();
         }
       };
     });
+
+    function checkWinner() {
+      const cells = document.querySelectorAll('.cell');
+      const winPatterns = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+      ];
+
+      for (let pattern of winPatterns) {
+        const [a, b, c] = pattern;
+        const v1 = cells[a].textContent;
+        if (v1 && v1 === cells[b].textContent && v1 === cells[c].textContent) {
+          setTimeout(() => {
+            alert(`${v1} wins!`);
+            resetBoard();
+          }, 100);
+          return;
+        }
+      }
+
+      // Check for draw
+      if ([...cells].every(c => c.textContent)) {
+        setTimeout(() => {
+          alert(`It's a draw!`);
+          resetBoard();
+        }, 100);
+      }
+    }
+
+    function resetBoard() {
+      document.querySelectorAll('.cell').forEach(cell => {
+        cell.textContent = '';
+      });
+      // যার প্রথম চাল ছিল, সে আবার শুরু করবে
+      isMyTurn = (mySymbol === 'X');
+    }
   </script>
 </body>
 </html>
